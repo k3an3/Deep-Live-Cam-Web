@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Replacement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .file-input {
+            margin-bottom: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        #result {
+            margin-top: 20px;
+            text-align: center;
+        }
+        video {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Replacement</h1>
+        <div class="file-input">
+            <label for="faceImage">Face Image:</label>
+            <input type="file" id="faceImage" accept="image/*">
+        </div>
+        <div class="file-input">
+            <label for="mediaFile">Media File (Image or Video):</label>
+            <input type="file" id="mediaFile" accept="image/*,video/*">
+        </div>
+        <button id="uploadButton">Upload and Process</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', async () => {
+            const faceImage = document.getElementById('faceImage').files[0];
+            const mediaFile = document.getElementById('mediaFile').files[0];
+
+            if (!faceImage || !mediaFile) {
+                alert('Please select both a face image and a media file.');
+                return;
+            }
+
+            // Disable the button while processing
+            const uploadButton = document.getElementById('uploadButton');
+            uploadButton.disabled = true;
+            uploadButton.textContent = 'Uploading...';
+
+            const formData = new FormData();
+            formData.append('face_image', faceImage);
+            formData.append('media_file', mediaFile);
+
+            try {
+                // Upload files to the server
+                const response = await fetch(document.location.href + 'process', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                const taskId = data.task_id;
+
+                if (taskId === undefined) {
+                    uploadButton.disabled = false;
+                    uploadButton.textContent = 'Upload and Process';
+                    alert("Error");
+                    return;
+                }
+
+                uploadButton.textContent = 'Processing...';
+
+                // Poll the server for the status of the task
+                const pollInterval = 2000; // 2 seconds
+                const checkStatus = async () => {
+                    const statusResponse = await fetch(document.location.href + `tasks/${taskId}`);
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.status === 'done') {
+                        // Task completed, display the result
+                        const resultDiv = document.getElementById('result');
+                        const output = document.location.href + statusData.output_file;
+                        if (statusData.output_file.endsWith(".mp4")) {
+                            resultDiv.innerHTML = `
+                            <h2>Result:</h2>
+                            <video controls>
+                                <source src="${output}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        `;
+                        } else {
+                            resultDiv.innerHTML = `
+                            <h2>Result:</h2>
+                            <img src="${output}" height="500"/>
+                        `;
+                        }
+                        uploadButton.disabled = false;
+                        uploadButton.textContent = 'Upload and Process';
+                    } else {
+                        // Task still processing, check again after interval
+                        setTimeout(checkStatus, pollInterval);
+                    }
+                };
+
+                // Start polling
+                checkStatus();
+            } catch (error) {
+                alert('There was an error processing your request.');
+                console.error('Error:', error);
+                uploadButton.disabled = false;
+                uploadButton.textContent = 'Upload and Process';
+            }
+        });
+    </script>
+</body>
+</html>
