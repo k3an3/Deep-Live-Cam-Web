@@ -61,7 +61,7 @@
         <button id="uploadButton">Upload and Process</button>
         <div id="result"></div>
         <h2>Past Results:</h2>
-        <div id="previous"></div>
+        <ul id="previous"></ul>
     </div>
 
     <script>
@@ -78,16 +78,20 @@
         }
 
         function addPrevious(file) {
-            let newPrevious = document.createElement("a");
-            newPrevious.href = `${window.location.href}/${file}`
-            newPrevious.innerText = file.split("/")[1];
+            let newPrevious = document.createElement("li");
+            let newLink = document.createElement("a");
+            newLink.href = `${window.location.href}/${file}`
+            newLink.innerText = file.split("/")[1];
+            newPrevious.appendChild(newLink);
             previousDiv.appendChild(newPrevious);
         }
 
         function loadPrevious() {
             const stored = getStored();
             for (const prev of stored) {
-                addPrevious(prev);
+                if (prev) {
+                    addPrevious(prev);
+                }
             }
         }
 
