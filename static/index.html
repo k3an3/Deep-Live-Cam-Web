@@ -60,9 +60,38 @@
         </div>
         <button id="uploadButton">Upload and Process</button>
         <div id="result"></div>
+        <h2>Past Results:</h2>
+        <div id="previous"></div>
     </div>
 
     <script>
+        const previousDiv = document.getElementById("previous");
+
+        function getStored() {
+            return JSON.parse(localStorage.getItem("previous")) || [];
+        }
+
+        function saveTask(taskId) {
+            let stored = getStored();
+            stored.push(taskId);
+            localStorage.setItem("previous", JSON.stringify(stored));
+        }
+
+        function addPrevious(file) {
+            let newPrevious = document.createElement("a");
+            newPrevious.href = `${window.location.href}/${file}`
+            previousDiv.appendChild(newPrevious);
+        }
+
+        function loadPrevious() {
+            const stored = getStored();
+            for (const prev of stored) {
+                addPrevious(prev);
+            }
+        }
+
+        loadPrevious();
+
         document.getElementById('uploadButton').addEventListener('click', async () => {
             const faceImage = document.getElementById('faceImage').files[0];
             const mediaFile = document.getElementById('mediaFile').files[0];
@@ -97,6 +126,8 @@
                     return;
                 }
 
+                addPrevious(data.output);
+                saveTask(data.output);
                 uploadButton.textContent = 'Processing...';
 
                 // Poll the server for the status of the task
@@ -108,7 +139,7 @@
                     if (statusData.status === 'done') {
                         // Task completed, display the result
                         const resultDiv = document.getElementById('result');
-                        const output = document.location.href + statusData.output_file;
+                        const output = window.location.href + statusData.output_file;
                         if (statusData.output_file.endsWith(".mp4")) {
                             resultDiv.innerHTML = `
                             <h2>Result:</h2>
