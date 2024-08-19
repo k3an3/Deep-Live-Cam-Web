@@ -72,7 +72,7 @@ async def process_request(
     task_id = str(uuid4())
     extension = os.path.splitext(media_file.filename)[1]
     face_extension = os.path.splitext(face_image.filename)[1]
-    output_filename = f"output/{task_id}{extension}"  # Assume the output is a video file
+    output_filename = f"output/{task_id}{extension}"
 
     async with aiofiles.tempfile.NamedTemporaryFile("wb", suffix=face_extension, delete=False) as f:
         await f.write(await face_image.read())

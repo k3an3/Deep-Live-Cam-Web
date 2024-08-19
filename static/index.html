@@ -80,6 +80,7 @@
         function addPrevious(file) {
             let newPrevious = document.createElement("a");
             newPrevious.href = `${window.location.href}/${file}`
+            newPrevious.innerText = file.split("/")[1];
             previousDiv.appendChild(newPrevious);
         }
 
@@ -126,12 +127,11 @@
                     return;
                 }
 
-                addPrevious(data.output);
-                saveTask(data.output);
                 uploadButton.textContent = 'Processing...';
 
                 // Poll the server for the status of the task
                 const pollInterval = 2000; // 2 seconds
+                let saved = false;
                 const checkStatus = async () => {
                     const statusResponse = await fetch(document.location.href + `tasks/${taskId}`);
                     const statusData = await statusResponse.json();
@@ -158,6 +158,11 @@
                         uploadButton.textContent = 'Upload and Process';
                     } else {
                         // Task still processing, check again after interval
+                        if (!saved) {
+                            saved = true;
+                            addPrevious(statusData.output_file);
+                            saveTask(statusData.output_file);
+                        }
                         setTimeout(checkStatus, pollInterval);
                     }
                 };
